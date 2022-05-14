@@ -1,1 +1,1 @@
-gnosis
+pycryptodome

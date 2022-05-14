@@ -3,12 +3,11 @@ Client
 """
 
 from socket import socket
-import json
-import pickle
-from client_server_network.sample_files.sample_data import CAR_DATA
 import logging
 import tqdm
 import os
+from utils import encrypt_message, serialise_object
+
 
 # Library to report events
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
@@ -42,7 +41,7 @@ def transfer_object(host, port, serialisation_method, obj):
     soc.close()
 
 
-def transfer_file(host, port, file_name):
+def transfer_file(host, port, file_name, encrypt=True):
     """
     Sends a file to a server.
 
@@ -73,7 +72,10 @@ def transfer_file(host, port, file_name):
     with open(file_name, "rb") as f:
         while True:
             # read the bytes from the file
-            bytes_read = f.read(buffer_size)
+            if encrypt == True:
+                bytes_read = encrypt_message(f.read(buffer_size))
+            else:
+                bytes_read = f.read(buffer_size)
             if not bytes_read:
                 # file transmitting is done
                 break
@@ -85,22 +87,6 @@ def transfer_file(host, port, file_name):
     s.close()
 
 
-def serialise_object(obj, serialisation_method):
-    # serialisation types
-    if serialisation_method == "json":
-        # Json serialisation
-        logging.info(f"Converting object to json format")
-        data = str.encode(json.dumps(obj))
-    elif serialisation_method == "binary":
-        # Binary serialisation
-        logging.info(f"Converting object to binary format")
-        data = pickle.dumps(obj, -1)
-    else:
-        logging.error(f"Incorrect method. Please provide one of json or binary.")
-        return
-    return data
-
-
-# transfer_object("0.0.0.0",5002,"json", CAR_DATA)
+# transfer_object("0.0.0.0", 5002, "binary", {'1': '2'})
 # transfer_file("0.0.0.0", 5006,
 #                "/Users/alex/PycharmProjects/client_server_network/client_server_network/sample_files/file1.txt")

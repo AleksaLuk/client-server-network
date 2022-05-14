@@ -3,12 +3,16 @@ User interface
 """
 
 from tkinter import ttk
+import tkinter as tk
 from tkinter.messagebox import showinfo
 from tkinter import *
 from tkinter.filedialog import askopenfile
 from client import transfer_file
-import tkinter as tk
+from client import transfer_object
+from sample_files.sample_data import DATA
 
+PORT = 5002
+HOST = "0.0.0.0"
 
 class UserInterface:
     def __init__(self):
@@ -92,7 +96,9 @@ class UserInterface:
             if file_path is not None:
                 pass
             self.file_path = file_path.name
-            self.T.insert("1.0",f"1) File Path selected: {self.file_path}\n")
+            self.selections['File path'] = self.file_path
+            self.update_text_box()
+
 
         # create a button
         file_path_button = tk.Button(self.sub_frame1, text='Browse',command=select_file_callback)
@@ -112,10 +118,13 @@ class UserInterface:
         serialisation_label = ttk.Label(self.sub_frame2, text="Select object serialisation method:")
         serialisation_label.pack(pady=5)
 
-        # create a combobox
         def serialisation_callback(event):
-            self.T.insert(END, f"3) Method selected: {selected_method.get()}\n")
+            self.selections['Serialisation method'] = selected_method.get()
+            self.update_text_box()
+
         selected_method = tk.StringVar()
+
+        # create a combobox
         serialisation_method = ttk.Combobox(self.sub_frame2, textvariable=selected_method)
         serialisation_method.bind("<<ComboboxSelected>>", serialisation_callback)
 
@@ -138,14 +147,16 @@ class UserInterface:
         obj_selection_label = ttk.Label(self.sub_frame1, text="Select object:")
         obj_selection_label.pack(padx=10, pady=5, side=LEFT)
 
-        # create a combobox
         def obj_selection_callback(event):
-            self.T.insert(END, f"2) Object selected: {selected_object.get()}\n")
+            self.selections['Selected object'] = selected_object.get()
+            self.update_text_box()
+
+        # create a combobox
         selected_object = tk.StringVar()
         selection_obj = ttk.Combobox(self.sub_frame1, textvariable=selected_object)
         selection_obj.bind("<<ComboboxSelected>>", obj_selection_callback)
 
-        selection_obj['values'] = ["Dictionary 1", "Dictionary 2"]
+        selection_obj['values'] = list(DATA.keys())
 
         # prevent typing a value
         selection_obj['state'] = 'readonly'
@@ -166,7 +177,8 @@ class UserInterface:
 
         # create a radio button
         def encryption_callback():
-            self.T.insert(END, f"4) Encryption: {radio_var.get()}\n")
+            self.selections['Encryption'] = radio_var.get()
+            self.update_text_box()
         radio_var = tk.StringVar()
         c1 = tk.Radiobutton(self.sub_frame3, text='Yes', value='Yes', variable=radio_var, tristatevalue=" ", command=encryption_callback)
         c2 = tk.Radiobutton(self.sub_frame3, text='No', value='No', variable=radio_var, tristatevalue=" ", command=encryption_callback)
@@ -187,17 +199,40 @@ class UserInterface:
             """
             showinfo(
                 title='Information',
-                message='File transfer initiated'
+                message='Transfer initiated'
             )
-            transfer_file("0.0.0.0", 5006, self.file_path)
-            self.T.insert(END, "5) Operation status: File transfer initiated\n")
+            if self.selections['Encryption'] == "Yes":
+                enc = True
+            else:
+                enc = False
 
-        # create a button
-        execute_button = tk.Button(self.sub_frame4, text="Upload", command=file_transfer_callback)
+            transfer_file(HOST, PORT, self.file_path, encrypt=enc)
+            self.selections['file_transfer'] = "True"
+            self.update_text_box()
+
+        def object_transfer_callback():
+            """
+            Show file transfer status information.
+
+            """
+            showinfo(
+                title='Information',
+                message='Transfer initiated'
+            )
+            data = DATA[self.selections['Selected object']]
+            transfer_object(HOST, PORT, self.selections['Serialisation method'], data)
+            # self.selections['object_transfer'] = "True"
+            # self.update_text_box()
+            self.T.insert(END, f"\nData selected: {data}")
+
+        file_transfer_button = tk.Button(self.sub_frame4, text="Upload file", command=file_transfer_callback)
+        object_transfer_button = tk.Button(self.sub_frame4, text="Upload object", command=object_transfer_callback)
 
         # place the widget
-        execute_button.config(width=10)
-        execute_button.pack(pady=5)
+        file_transfer_button.config(width=10)
+        file_transfer_button.pack(side=LEFT, pady=5)
+        object_transfer_button.config(width=10)
+        object_transfer_button.pack(side=LEFT, pady=5)
 
     def text_box(self):
         """
@@ -234,5 +269,10 @@ class UserInterface:
         exit_button = tk.Button(self.sub_frame6, text="Exit", command=self.root.destroy)
         info_button.pack(side=LEFT, pady=5)
         exit_button.pack(side=LEFT, pady=5)
+
+    def update_text_box(self):
+        self.T.delete('1.0', END)
+        text = "\n".join([f"{key}: {val}" for key, val in self.selections.items()])
+        self.T.insert("1.0", text)
 
 UserInterface()
