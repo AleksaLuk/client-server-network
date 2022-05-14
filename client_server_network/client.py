@@ -85,7 +85,7 @@ def transfer_file(host, port, file_name):
     s.close()
 
 
-def serialise_object(obj,serialisation_method):
+def serialise_object(obj, serialisation_method):
     # serialisation types
     if serialisation_method == "json":
         # Json serialisation
