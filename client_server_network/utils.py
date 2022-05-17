@@ -7,6 +7,7 @@ from Crypto.Cipher import AES
 import pickle
 import json
 import logging
+# import pyxser as pyx - explain that difficulty getting library (add to report)
 
 
 key = hashlib.sha256('This is a key123'.encode()).digest()
@@ -17,6 +18,7 @@ def encrypt_message(message):
     obj = AES.new(key, AES.MODE_CFB, iv.encode())
     ciphertext = obj.encrypt(message)
     return ciphertext
+
 
 
 def decrypt_message(ciphertext):

@@ -13,7 +13,7 @@ from utils import encrypt_message, serialise_object
 logging.basicConfig(format="%(asctime)s - %(message)s", level=logging.INFO)
 
 
-def transfer_object(host, port, serialisation_method, obj):
+def transfer_object(host, port, serialisation_method, encrypt, obj):
     """
     Sends a python object to a server.
 
@@ -31,10 +31,12 @@ def transfer_object(host, port, serialisation_method, obj):
     soc.connect((host, port))
     logging.info(f"Connected")
 
-    serialised_object = serialise_object(obj, serialisation_method)
+    transformed_object = serialise_object(obj, serialisation_method)
+    if encrypt == "Yes":
+        transformed_object = encrypt_message(transformed_object)
 
     # send object:
-    soc.sendall(serialised_object)
+    soc.sendall(transformed_object)
     logging.info(f"Serialised object sent to server")
 
     # close the socket

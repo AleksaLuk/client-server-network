@@ -14,6 +14,7 @@ from sample_files.sample_data import DATA
 PORT = 5002
 HOST = "0.0.0.0"
 
+
 class UserInterface:
     def __init__(self):
 
@@ -220,7 +221,7 @@ class UserInterface:
                 message='Transfer initiated'
             )
             data = DATA[self.selections['Selected object']]
-            transfer_object(HOST, PORT, self.selections['Serialisation method'], data)
+            transfer_object(HOST, PORT, self.selections['Serialisation method'], self.selections['Encryption'], data)
             # self.selections['object_transfer'] = "True"
             # self.update_text_box()
             self.T.insert(END, f"\nData selected: {data}")
@@ -274,5 +275,6 @@ class UserInterface:
         self.T.delete('1.0', END)
         text = "\n".join([f"{key}: {val}" for key, val in self.selections.items()])
         self.T.insert("1.0", text)
+
 
 UserInterface()
