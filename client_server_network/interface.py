@@ -7,16 +7,15 @@ import tkinter as tk
 from tkinter.messagebox import showinfo
 from tkinter import *
 from tkinter.filedialog import askopenfile
-from client import transfer_file
-from client import transfer_object
-from sample_files.sample_data import DATA
-
-PORT = 5002
-HOST = "0.0.0.0"
+from .client import Client
+from .sample_files.sample_data import DATA
 
 
 class UserInterface:
-    def __init__(self):
+    def __init__(self, host, port):
+        # Create client
+        self.client = Client(host, port)
+        self.client._connect()
 
         # config the root window and frames
         self.root = tk.Tk()
@@ -112,7 +111,7 @@ class UserInterface:
     def serialisation_selection(self):
         """
         Creates drop down menu to select serialisation method.
-        Methods: json, binary, xml.
+        Methods: json, binary.
         """
 
         # Text for serialisation method label
@@ -129,7 +128,7 @@ class UserInterface:
         serialisation_method = ttk.Combobox(self.sub_frame2, textvariable=selected_method)
         serialisation_method.bind("<<ComboboxSelected>>", serialisation_callback)
 
-        serialisation_method['values'] = ["XML", "Binary", "Json"]
+        serialisation_method['values'] = ["Binary", "Json"]
 
         # prevent typing a value
         serialisation_method['state'] = 'readonly'
@@ -207,7 +206,7 @@ class UserInterface:
             else:
                 enc = False
 
-            transfer_file(HOST, PORT, self.file_path, encrypt=enc)
+            self.client.transfer_file(self.file_path, encrypt=enc)
             self.selections['file_transfer'] = "True"
             self.update_text_box()
 
@@ -221,7 +220,9 @@ class UserInterface:
                 message='Transfer initiated'
             )
             data = DATA[self.selections['Selected object']]
-            transfer_object(HOST, PORT, self.selections['Serialisation method'], self.selections['Encryption'], data)
+            self.client.transfer_object(self.selections['Serialisation method'],
+                                   data,
+                                   self.selections['Encryption'])
             # self.selections['object_transfer'] = "True"
             # self.update_text_box()
             self.T.insert(END, f"\nData selected: {data}")
@@ -276,5 +277,3 @@ class UserInterface:
         text = "\n".join([f"{key}: {val}" for key, val in self.selections.items()])
         self.T.insert("1.0", text)
 
-
-UserInterface()

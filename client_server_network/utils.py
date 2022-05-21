@@ -20,11 +20,10 @@ def encrypt_message(message):
     return ciphertext
 
 
-
 def decrypt_message(ciphertext):
     obj2 = AES.new(key, AES.MODE_CFB, iv.encode())
     message = obj2.decrypt(ciphertext)
-    return message.decode()
+    return message
 
 
 def serialise_object(obj, serialisation_method):
@@ -42,5 +41,3 @@ def serialise_object(obj, serialisation_method):
         return
     return data
 
-# print(serialise_object({'1':'2'}, 'binary'))
-# print(encrypt_message({'1':'2'}))
