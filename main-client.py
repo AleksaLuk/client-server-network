@@ -1,8 +1,9 @@
 from client_server_network.client import Client
 from client_server_network.interface import UserInterface
+import socket
 
 # device's IP address
-SERVER_HOST = "0.0.0.0"
+SERVER_HOST = socket.gethostname()
 SERVER_PORT = 5003
 
 # c = Client(SERVER_HOST, SERVER_PORT)

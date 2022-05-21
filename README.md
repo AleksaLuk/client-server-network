@@ -19,3 +19,11 @@ pip install -r requirements.txt
 ```shell
 python setup.py install
 ```
+
+## Running the application
+1. Run main-server.py
+2. Run main-client.py
+
+## Stopping the application
+1. Stop main-client.py
+2. Stop main-server.py
