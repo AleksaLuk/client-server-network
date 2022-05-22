@@ -3,14 +3,13 @@ server
 """
 
 import socket
-import tqdm
-import os
+import sys
 import json
 from json import JSONDecodeError
 import pickle
 import logging
 import traceback
-from .utils import decrypt_message
+from .utils import decrypt_message, get_params
 
 
 logger = logging.getLogger(__name__)
@@ -27,35 +26,17 @@ SEPARATOR = "<SEPARATOR>"
 HEADERSIZE = 10
 
 
-def get_params(msg):
-    data_type = msg[:HEADERSIZE]
-    encrypt = msg[HEADERSIZE: 2 * HEADERSIZE]
-    param3 = msg[2 * HEADERSIZE: 3 * HEADERSIZE]
-    length = msg[3 * HEADERSIZE: 4 * HEADERSIZE]
-
-    metadata = {"type": data_type.strip().decode(),
-                "encrypt": bool(encrypt),
-                "length": int(length)}
-
-    if metadata["type"] == 'object':
-        metadata["serialisation"] = param3.strip().decode()
-    elif metadata["type"] == 'file':
-        metadata["filename"] = param3.strip().decode()
-
-    return metadata
-
-
 class Server(socket.socket):
     def __init__(self, host, port, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.host = host
         self.port = port
-        self.bind((host, port))
 
     def recvall(self):
         # enabling our server to accept connections
         # 5 here is the number of unaccepted connections that
         # the system will allow before refusing new connections
+        self.bind((self.host, self.port))
         self.listen(5)
         logger.info(f"[*] Listening as {self.host}:{self.port}")
 
@@ -63,23 +44,16 @@ class Server(socket.socket):
         #     while True:
         # accept connection if there is any
         while True:
-            client_socket, address = self.accept()
+            try:
+                client_socket, address = self.accept()
+            except KeyboardInterrupt:
+                logger.info(f"Server {self.host}:{self.port} shutdown.")
+                sys.exit()
             # if below code is executed, that means the sender is connected
             logger.info(f"[+] {address} is connected.")
             # receive the file infos
             # receive using client socket, not server socket
-
             self.receive_message(client_socket, address)
-
-            # except EOFError:
-            #     logger.warning("Connection opened but no data received")
-            # except Exception as e:
-            #     traceback.print_exc()
-            #     logger.error(repr(e))
-            # finally:
-            #     client_socket.close()
-            #     self.close()
-            #     return self
 
     @staticmethod
     def receive_object(received, metadata):
@@ -103,25 +77,6 @@ class Server(socket.socket):
 
         logger.info(f"Received FILE\n\n{received}")
         return received
-        # start receiving the file from the socket
-        # and writing to the file stream
-        # progress = tqdm.tqdm(range(
-        #     metadata['size']), f"SERVER: Receiving {metadata['filename']}", unit="B", unit_scale=True, unit_divisor=1024)
-        # with open(metadata['filename'], "wb") as f:
-        #     while True:
-        #         # read 1024 bytes from the socket (receive)
-        #         bytes_read = client_socket.recv(BUFFER_SIZE)
-        #         if not bytes_read:
-        #             # nothing is received
-        #             # file transmitting is done
-        #             break
-        #         # write to the file the bytes we just received
-        #         if metadata['encrypt']:
-        #             bytes_read = decrypt_message(bytes_read)
-        #
-        #         f.write(bytes_read)
-        #         # update the progress bar
-        #         progress.update(len(bytes_read))
 
     def receive_message(self, s, address):
         while True:
@@ -133,14 +88,16 @@ class Server(socket.socket):
                     msg = s.recv(64)
                     if not msg:
                         quit = True
+                        logger.info(f"Client {address} disconnected.")
                         break
                 except ConnectionResetError:
                     quit = True
+                    logger.info(f"Client {address} disconnected.")
                     break
                 if new_msg:
                     # print("new msg len:", msg[:HEADERSIZE])
                     try:
-                        msg_params = get_params(msg)
+                        msg_params = get_params(msg, HEADERSIZE)
                     except ValueError as v:
                         logger.info(v)
                         continue

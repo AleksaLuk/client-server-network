@@ -7,12 +7,12 @@ import socket
 
 import tqdm
 import os
-from .utils import encrypt_message, serialise_object
+from .utils import encrypt_message, serialise_object, create_headers
 
 logger = logging.getLogger(__name__)
+
 logging.basicConfig(format=f"CLIENT: %(asctime)s %(levelname)s - %(message)s",
                     level=logging.INFO,
-                    # filename="client_server_history.log",
                     handlers=[
                             logging.FileHandler("client_history.log"),
                             logging.StreamHandler()
@@ -54,14 +54,9 @@ class Client(socket.socket):
         if encrypt:
             transformed_object = encrypt_message(transformed_object)
 
-        send_type = "object"
-        message = f"{send_type:<{HEADERSIZE}}"
-        message += f"{encrypt:<{HEADERSIZE}}"
-        message += f"{serialisation_method:<{HEADERSIZE}}"
-        message += f"{len(transformed_object):<{HEADERSIZE}}"
-
+        metadata = create_headers(HEADERSIZE, "object", encrypt, serialisation_method, len(transformed_object))
         # send object:
-        self.sendall(bytes(message, "utf-8") + transformed_object)
+        self.sendall(bytes(metadata, "utf-8") + transformed_object)
         logger.info(f"Serialised object sent to server")
 
         self.receive_message()
@@ -79,21 +74,19 @@ class Client(socket.socket):
         # get the file size
         filesize = os.path.getsize(filepath)
         filename = os.path.basename(filepath)
-        send_type = "file"
-        message = f"{send_type:<{HEADERSIZE}}"
-        message += f"{encrypt:<{HEADERSIZE}}"
-        message += f"{filename:<{HEADERSIZE}}"
-        message += f"{filesize:<{HEADERSIZE}}"
+        metadata = create_headers(HEADERSIZE, "file", encrypt, filename, filesize)
 
         file_contents = b""
 
         # start sending the file
         logger.info(f"Transferring {filename} to server...")
+
         progress = tqdm.tqdm(range(filesize), f"CLIENT: Sending {filename}", unit="B", unit_scale=True, unit_divisor=1024)
         with open(filepath, "rb") as f:
             while True:
                 # read the bytes from the file
                 bytes_read = f.read(BUFFER_SIZE)
+                # print("A", bytes_read)
                 if not bytes_read:
                     # file transmitting is done
                     break
@@ -106,6 +99,6 @@ class Client(socket.socket):
         if encrypt:
             file_contents = encrypt_message(file_contents)
 
-        self.sendall(bytes(message, "utf-8") + file_contents)
+        self.sendall(bytes(metadata, "utf-8") + file_contents)
         logger.info(f"{filename} transfer complete")
         self.receive_message()

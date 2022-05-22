@@ -41,3 +41,25 @@ def serialise_object(obj, serialisation_method):
         return
     return data
 
+
+def create_headers(block_size, *args):
+    headers = "".join([f"{arg:<{block_size}}" for arg in args])
+    return headers
+
+
+def get_params(msg, HEADERSIZE):
+    data_type = msg[:HEADERSIZE]
+    encrypt = msg[HEADERSIZE: 2 * HEADERSIZE]
+    param3 = msg[2 * HEADERSIZE: 3 * HEADERSIZE]
+    length = msg[3 * HEADERSIZE: 4 * HEADERSIZE]
+
+    metadata = {"type": data_type.strip().decode(),
+                "encrypt": bool(encrypt),
+                "length": int(length)}
+
+    if metadata["type"] == 'object':
+        metadata["serialisation"] = param3.strip().decode()
+    elif metadata["type"] == 'file':
+        metadata["filename"] = param3.strip().decode()
+
+    return metadata

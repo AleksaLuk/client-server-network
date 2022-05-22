@@ -7,6 +7,8 @@ import tkinter as tk
 from tkinter.messagebox import showinfo
 from tkinter import *
 from tkinter.filedialog import askopenfile
+import os
+from datetime import datetime, timedelta
 from .client import Client
 from .sample_files.sample_data import DATA
 
@@ -14,6 +16,7 @@ from .sample_files.sample_data import DATA
 class UserInterface:
     def __init__(self, host, port):
         # Create client
+        self.start_time = datetime.now()
         self.client = Client(host, port)
         self.client._connect()
 
@@ -92,12 +95,15 @@ class UserInterface:
             """
 
             # file path setup
-            file_path = askopenfile(mode='r', filetypes=[('text files', '.txt')])
+            file_path = askopenfile(mode='r', filetypes=[('text files', '.txt'),
+                                                         ('pdf files', '.pdf'),
+                                                         ('xml files', '.xml'),
+                                                         ('picture files', '.jpg'),
+                                                         ('picture files', '.jpeg')])
             if file_path is not None:
-                pass
-            self.file_path = file_path.name
-            self.selections['File path'] = self.file_path
-            self.update_text_box()
+                self.file_path = file_path.name
+                self.selections['File path'] = self.file_path
+                self.update_text_box()
 
 
         # create a button
@@ -151,6 +157,7 @@ class UserInterface:
             self.selections['Selected object'] = selected_object.get()
             self.update_text_box()
 
+
         # create a combobox
         selected_object = tk.StringVar()
         selection_obj = ttk.Combobox(self.sub_frame1, textvariable=selected_object)
@@ -197,35 +204,57 @@ class UserInterface:
             Show file transfer status information.
 
             """
-            showinfo(
-                title='Information',
-                message='Transfer initiated'
-            )
-            if self.selections['Encryption'] == "Yes":
-                enc = True
+            if "File path" not in self.selections:
+                showinfo(title="Error", message="No file path given, please select using the browse button")
+            elif "Encryption" not in self.selections:
+                showinfo(title="Error", message="Please select encryption (yes or no) for file transfer")
             else:
-                enc = False
+                showinfo(
+                    title='Information',
+                    message='Transfer initiated'
+                )
+                if self.selections['Encryption'] == "Yes":
+                    enc = True
+                else:
+                    enc = False
 
-            self.client.transfer_file(self.file_path, encrypt=enc)
-            self.selections['file_transfer'] = "True"
-            self.update_text_box()
+                self.client.transfer_file(self.file_path, encrypt=enc)
+                self.selections['file_transfer'] = "True"
+                self.update_text_box()
+
+                try:
+                    for line in self.get_log_output():
+                        self.log_box.insert(END, line)
+                except (tk.TclError, AttributeError):
+                    self.log_popup()
 
         def object_transfer_callback():
             """
             Show file transfer status information.
 
             """
-            showinfo(
-                title='Information',
-                message='Transfer initiated'
-            )
-            data = DATA[self.selections['Selected object']]
-            self.client.transfer_object(self.selections['Serialisation method'],
-                                   data,
-                                   self.selections['Encryption'])
-            # self.selections['object_transfer'] = "True"
-            # self.update_text_box()
-            self.T.insert(END, f"\nData selected: {data}")
+            if "Selected object" not in self.selections:
+                showinfo(title="Error", message="Please an object for transfer")
+            elif "Serialisation method" not in self.selections:
+                showinfo(title="Error", message="Please select serialisation method for object transfer")
+            elif "Encryption" not in self.selections:
+                showinfo(title="Error", message="Please select encryption (yes or no) for object transfer")
+            else:
+                showinfo(
+                    title='Information',
+                    message='Transfer initiated'
+                )
+                data = DATA[self.selections['Selected object']]
+                self.client.transfer_object(self.selections['Serialisation method'],
+                                       data,
+                                       self.selections['Encryption'])
+                # self.selections['object_transfer'] = "True"
+                # self.update_text_box()
+                try:
+                    for line in self.get_log_output():
+                        self.log_box.insert(END, line)
+                except (tk.TclError, AttributeError):
+                    self.log_popup()
 
         file_transfer_button = tk.Button(self.sub_frame4, text="Upload file", command=file_transfer_callback)
         object_transfer_button = tk.Button(self.sub_frame4, text="Upload object", command=object_transfer_callback)
@@ -276,4 +305,31 @@ class UserInterface:
         self.T.delete('1.0', END)
         text = "\n".join([f"{key}: {val}" for key, val in self.selections.items()])
         self.T.insert("1.0", text)
+        if "Selected object" in self.selections:
+            self.T.insert(END, f"\nData selected: {DATA[self.selections['Selected object']]}")
+
+    def log_popup(self):
+
+        top = Toplevel()
+        top.resizable(True, True)
+        top.geometry("500x400")
+        top.title("Log History")
+
+        # Create a text widget
+        self.log_box = Text(top)
+
+        # place the widget
+        self.log_box.pack(expand=True, fill=BOTH)
+
+        for line in self.get_log_output():
+            self.log_box.insert(END, line)
+
+    def get_log_output(self):
+        file = os.path.join(os.path.dirname(__file__), "..", 'client_history.log')
+        with open(file, "r") as f:
+            for line in f.readlines():
+                line_time = datetime.strptime(line[8:27], "%Y-%m-%d %H:%M:%S")
+                if line_time >= (self.start_time - timedelta(seconds=1)):
+                    yield line
+
 
