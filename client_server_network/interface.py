@@ -1,26 +1,97 @@
 """
 User interface
 """
-
+import socket
 from tkinter import ttk
 import tkinter as tk
 from tkinter.messagebox import showinfo
 from tkinter import *
 from tkinter.filedialog import askopenfile
 import os
+import configparser
 from datetime import datetime, timedelta
 from .client import Client
 from .sample_files.sample_data import DATA
 
 
 class UserInterface:
-    def __init__(self, host, port):
+    def __init__(self, host=None, port=None):
+        """
+        :param host: The ip address or hostname of the server - the receiver (do not pass if using config)
+        :param port: The port of the server - the receiver (do not pass if using config)
+        """
+
         # Create client
         self.start_time = datetime.now()
-        self.client = Client(host, port)
-        self.client._connect()
+        if host and port:
+            self.client = Client(host, port)
+            self.client.connection()
 
-        # config the root window and frames
+    def run(self, config_file=""):
+        """
+        Runs user interface, either by GUI or through configuration file
+
+        :param config_file: path to config file (do not pass if not required)
+        """
+
+        if config_file:
+            self._run_with_config(config_file)
+        else:
+            self._run_with_tkinter()
+
+    def _run_with_config(self, config_file: str):
+        """
+        Runs connection through configuration file
+
+        :param config_file: path to config file
+        """
+
+        config = configparser.ConfigParser()
+        config.read(config_file)
+
+        def send(client, config):
+            if config['File'].getboolean('send'):
+                file = config['File']['filepath'].replace("\"", "").replace("\'", "")
+                enc = config['File'].getboolean('encrypt')
+
+                client.transfer_file(file, enc)
+
+            if config['Object'].getboolean('send'):
+                obj = eval(config['Object']['object'])
+                enc = config['Object'].getboolean('encrypt')
+                ser = config['Object']['serialisation']
+
+                client.transfer_object(ser, obj, enc)
+
+        if config['LocalServer'].getboolean('send'):
+            host = config['LocalServer']['host']
+            host = socket.gethostname() if host.lower() == "localhost" else host
+            port = config['LocalServer'].getint('port')
+
+            client = Client(host, port)
+            client.connection()
+
+            new_host = socket.gethostname()
+            print(f"Could not connect to {config['LocalServer']['host']}, using {new_host} instead.")
+            client = Client(new_host, port)
+            client.connection()
+            send(client, config)
+
+        if config['AWS'].getboolean('send'):
+            try:
+                host = config['AWS']['host']
+                port = int(config['AWS']['port'])
+                client = Client(host, port)
+                client.connection()
+                send(client, config)
+            except:
+                print(f"Could not connect to {host}{port}")
+
+    def _run_with_tkinter(self):
+        """
+        Runs connection using tkinter GUI
+        """
+
         self.root = tk.Tk()
         self.root.resizable(False, False)
         self.root.title('Data Processing')
@@ -62,7 +133,6 @@ class UserInterface:
     def set_geometry(self):
         """
         Calculates geometry to center the window.
-
         """
 
         window_height = 670
@@ -105,7 +175,6 @@ class UserInterface:
                 self.selections['File path'] = self.file_path
                 self.update_text_box()
 
-
         # create a button
         file_path_button = tk.Button(self.sub_frame1, text='Browse',command=select_file_callback)
         file_path_button.config(width=10)
@@ -146,7 +215,7 @@ class UserInterface:
     def obj_selection(self):
         """
         Creates drop down menu to select from sample objects.
-        Object types: dictionaries, lists
+        Object types: dictionaries, lists, classes (for binary serialisation only)
         """
 
         # Text for select object label
@@ -184,8 +253,13 @@ class UserInterface:
 
         # create a radio button
         def encryption_callback():
+            """
+            Updates selection and UI console
+            """
+
             self.selections['Encryption'] = radio_var.get()
             self.update_text_box()
+
         radio_var = tk.StringVar()
         c1 = tk.Radiobutton(self.sub_frame3, text='Yes', value='Yes', variable=radio_var, tristatevalue=" ", command=encryption_callback)
         c2 = tk.Radiobutton(self.sub_frame3, text='No', value='No', variable=radio_var, tristatevalue=" ", command=encryption_callback)
@@ -196,14 +270,14 @@ class UserInterface:
 
     def execute_button(self):
         """
-        Executes operation.
+        Executes transfer operation.
         """
 
         def file_transfer_callback():
             """
             Show file transfer status information.
-
             """
+
             if "File path" not in self.selections:
                 showinfo(title="Error", message="No file path given, please select using the browse button")
             elif "Encryption" not in self.selections:
@@ -231,8 +305,8 @@ class UserInterface:
         def object_transfer_callback():
             """
             Show file transfer status information.
-
             """
+
             if "Selected object" not in self.selections:
                 showinfo(title="Error", message="Please an object for transfer")
             elif "Serialisation method" not in self.selections:
@@ -244,10 +318,14 @@ class UserInterface:
                     title='Information',
                     message='Transfer initiated'
                 )
+                if self.selections['Encryption'] == "Yes":
+                    enc = True
+                else:
+                    enc = False
                 data = DATA[self.selections['Selected object']]
                 self.client.transfer_object(self.selections['Serialisation method'],
                                        data,
-                                       self.selections['Encryption'])
+                                       enc)
                 # self.selections['object_transfer'] = "True"
                 # self.update_text_box()
                 try:
@@ -268,7 +346,6 @@ class UserInterface:
     def text_box(self):
         """
         Message box with status information.
-
         """
 
         # Create a text widget
@@ -281,18 +358,23 @@ class UserInterface:
         """
         Creates information and exit buttons.
         """
+
         def info_button_callback():
             """
-            Show process information.
-
+            Show instructions.
             """
+
             showinfo(
                 title='Information',
-                message='To select file for transfer user is required to:\n'
-                        '1) Click Browse button to select file \n'
-                        '2) Select from encryption options - Yes/No \n'
-                        '3) Click the Upload button to initialise transfer \n'
-
+                message='To transfer file:\n'
+                        '1) Select file using browse button\n'
+                        '2) Select encryption option\n'
+                        '3) Click Upload button to initiate transfer\n\n'
+                        'To transfer object:\n'
+                        '1) Select object from dropdown\n'
+                        '2) Select serialisation option\n'
+                        '3) Select encryption option\n'
+                        '4) Click Upload button to initiate transfer\n'
             )
 
         # create a button
@@ -302,6 +384,10 @@ class UserInterface:
         exit_button.pack(side=LEFT, pady=5)
 
     def update_text_box(self):
+        """
+        Updates UI console with user selections
+        """
+
         self.T.delete('1.0', END)
         text = "\n".join([f"{key}: {val}" for key, val in self.selections.items()])
         self.T.insert("1.0", text)
@@ -309,6 +395,9 @@ class UserInterface:
             self.T.insert(END, f"\nData selected: {DATA[self.selections['Selected object']]}")
 
     def log_popup(self):
+        """
+        Provides user with popup showing file transfer log history
+        """
 
         top = Toplevel()
         top.resizable(True, True)
@@ -325,6 +414,12 @@ class UserInterface:
             self.log_box.insert(END, line)
 
     def get_log_output(self):
+        """
+        Gets log history from log file
+
+        :yield: each log line (only from current session)
+        """
+
         file = os.path.join(os.path.dirname(__file__), "..", 'client_history.log')
         with open(file, "r") as f:
             for line in f.readlines():

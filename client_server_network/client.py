@@ -1,5 +1,5 @@
 """
-Client
+Client module
 """
 
 import logging
@@ -23,31 +23,46 @@ HEADERSIZE = 10
 
 
 class Client(socket.socket):
-    def __init__(self, host, port, *args, **kwargs):
+    """
+    Client class to interact and send data to server
+    """
+
+    def __init__(self, host: str, port: int, *args, **kwargs):
+        """
+        :param host: The ip address or hostname of the server - the receiver
+        :param port: The port of the server - the receiver
+        """
+
         super().__init__(*args, **kwargs)
         self.host = host
         self.port = port
 
-    def _connect(self):
+    def connection(self):
+        """
+        Connect to server
+        """
+
         self.connect((self.host, self.port))
         logger.info(f"Connected to HOST: {self.host} & PORT: {self.port}")
 
     def receive_message(self):
+        """
+        Receive response from the server
+        """
+
         message_header = self.recv(HEADERSIZE)
         # print(message_header.decode())
         message_length = int(message_header.decode('utf-8').strip())
         message = self.recv(message_length)
         logger.info(f"Received message from server: {message}")
 
-    def transfer_object(self, serialisation_method, obj, encrypt=True):
+    def transfer_object(self, serialisation_method: str, obj: any, encrypt=True):
         """
         Sends a python object to a server.
 
-        :param host: The ip address or hostname of the server - the receiver.
-        :param port: Port of the server
         :param serialisation_method: Method used to serialise data (xml, json, binary).
-        :param obj: python object to be sent e.g. dictionary.
-        :return:
+        :param obj: python object to be sent e.g. dictionary, list, class (binary only)
+        :param encrypt: provide object encryption
         """
 
         transformed_object = serialise_object(obj, serialisation_method)
@@ -61,14 +76,12 @@ class Client(socket.socket):
 
         self.receive_message()
 
-    def transfer_file(self, filepath, encrypt=True):
+    def transfer_file(self, filepath: str, encrypt=True):
         """
         Sends a file to a server.
 
-        :param host: The ip address or hostname of the server - the receiver.
-        :param port: Port of the server
-        :param file_name: File to be sent.
-        :return:
+        :param file_path: Path of file to be sent.
+        :param encrypt: choose whether encrypt file contents
         """
 
         # get the file size

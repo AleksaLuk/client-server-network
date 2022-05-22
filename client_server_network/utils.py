@@ -7,29 +7,48 @@ from Crypto.Cipher import AES
 import pickle
 import json
 import logging
-# import pyxser as pyx - explain that difficulty getting library (add to report)
 
 
 key = hashlib.sha256('This is a key123'.encode()).digest()
 iv = 'This is an IV456'
 
 
-def encrypt_message(message):
+def encrypt_message(message: bytes):
+    """
+    Encrypts message
+
+    :param message: input string to be encrypted
+    :return: encrypted message
+    """
     obj = AES.new(key, AES.MODE_CFB, iv.encode())
     ciphertext = obj.encrypt(message)
     return ciphertext
 
 
-def decrypt_message(ciphertext):
+def decrypt_message(ciphertext: bytes):
+    """
+    Decryptes message
+
+    :param ciphertext: encrypted message
+    :return: decrypted message
+    """
+
     obj2 = AES.new(key, AES.MODE_CFB, iv.encode())
     message = obj2.decrypt(ciphertext)
     return message
 
 
-def serialise_object(obj, serialisation_method):
-    # serialisation types
+def serialise_object(obj: any, serialisation_method: str):
+    """
+    Serialises python object
+
+    :param obj: e.g. list, dict, class
+    :param serialisation_method: json or binary
+    :return: serialised data
+    """
+
     if serialisation_method.lower() == "json":
-        # Json serialisation
+        # Text serialisation
         logging.info(f"Converting object to json format")
         data = str.encode(json.dumps(obj))
     elif serialisation_method.lower() == "binary":
@@ -42,19 +61,35 @@ def serialise_object(obj, serialisation_method):
     return data
 
 
-def create_headers(block_size, *args):
+def create_headers(block_size: int, *args):
+    """
+    Creates metadata block headers for server to understand incoming data
+
+    :param block_size: size of block enclosing parameter (e.g. 10 -> "binary    "
+    :param args: metadata variables (size, encryption, serialisation method etc)
+    :return: headers
+    """
+
     headers = "".join([f"{arg:<{block_size}}" for arg in args])
     return headers
 
 
-def get_params(msg, HEADERSIZE):
-    data_type = msg[:HEADERSIZE]
-    encrypt = msg[HEADERSIZE: 2 * HEADERSIZE]
-    param3 = msg[2 * HEADERSIZE: 3 * HEADERSIZE]
-    length = msg[3 * HEADERSIZE: 4 * HEADERSIZE]
+def get_params(msg: bytes, headersize: int) -> dict:
+    """
+    Parses metadata from block headers
+
+    :param msg: string containing blocks
+    :param headersize: size of blocks
+    :return: metadata
+    """
+
+    data_type = msg[:headersize]
+    encrypt = msg[headersize: 2 * headersize]
+    param3 = msg[2 * headersize: 3 * headersize]
+    length = msg[3 * headersize: 4 * headersize]
 
     metadata = {"type": data_type.strip().decode(),
-                "encrypt": bool(encrypt),
+                "encrypt": bool(int(encrypt)),
                 "length": int(length)}
 
     if metadata["type"] == 'object':

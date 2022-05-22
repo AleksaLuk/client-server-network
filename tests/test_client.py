@@ -11,6 +11,10 @@ class TestClient(unittest.TestCase):
     client = Client("", 5432)
 
     def tearDown(self):
+        """
+        Removes side effect log file
+        """
+
         try:
             os.remove("client_history.log")
         except FileNotFoundError:
@@ -22,6 +26,10 @@ class TestClient(unittest.TestCase):
     @mock.patch("client_server_network.client.encrypt_message")
     @mock.patch("client_server_network.client.serialise_object")
     def test_transfer_object(self, serialise_object, encrypt_message, create_headers, sendall, receive_message):
+        """
+        Tests client object transfer logic
+        """
+
         serialise_object.return_value = b"[1,2,3,4,5]"
         encrypt_message.return_value = b"encrypted message"
         create_headers.return_value = "metadata  "
@@ -55,6 +63,10 @@ class TestClient(unittest.TestCase):
     @mock.patch("client_server_network.client.open")
     @mock.patch("client_server_network.client.bytes")
     def test_transfer_file(self, mock_bytes, mock_open, basename, getsize, encrypt_message, create_headers, sendall, receive_message):
+        """
+        Tests client file transfer logic
+        """
+
         encrypt = True
         send_type = "file"
         getsize.return_value = 100
@@ -81,7 +93,11 @@ class TestClient(unittest.TestCase):
 
     @mock.patch("client_server_network.client.Client.connect")
     def test__connect(self, mock_connect):
-        self.client._connect()
+        """
+        Tests host and port connection
+        """
+
+        self.client.connection()
         mock_connect.assert_called_once_with((self.client.host, self.client.port))
 
     def test_receive_message(self):

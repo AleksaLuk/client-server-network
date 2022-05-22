@@ -4,22 +4,23 @@ import socket
 
 # device's IP address
 SERVER_HOST = socket.gethostname()
-SERVER_PORT = 5003
-
+SERVER_PORT = 5432
+#
 c = Client(SERVER_HOST, SERVER_PORT)
-c._connect()
-d = dict(zip(range(10), range(10)))
+# c.connection()
+# d = dict(zip(range(10), range(10)))
+#
+# # class Hello:
+# #     pass
+# # d = Hello()
+#
+# c.transfer_object("json", d, encrypt=True)
+#
+# while True:
+#     c.transfer_object("json", d, encrypt=True)
+#     c.transfer_file("/Users/alex/PycharmProjects/client_server_network/client_server_network/sample_files/file1.txt",
+#                     encrypt=True)
+#     input()
 
-# class Hello:
-#     pass
-# d = Hello()
-
-c.transfer_object("json", d, encrypt=True)
-
-while True:
-    c.transfer_object("json", d, encrypt=True)
-    c.transfer_file("/Users/alex/PycharmProjects/client_server_network/client_server_network/sample_files/file1.txt",
-                    encrypt=True)
-    input()
-
-# UserInterface(SERVER_HOST, SERVER_PORT)
+ui = UserInterface(SERVER_HOST, SERVER_PORT)
+ui.run()
