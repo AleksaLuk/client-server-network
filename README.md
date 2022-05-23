@@ -64,6 +64,8 @@ SERVER_PORT = 5432
 
 c = Client(SERVER_HOST, SERVER_PORT)
 c.connection()
+data = {"Hello": "World"}
+c.transfer_object("json", data, encrypt=True)
 ```
 
 
