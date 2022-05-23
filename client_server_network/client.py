@@ -57,8 +57,8 @@ class Client(socket.socket):
         """
         Sends a python object to a server.
 
-        :param serialisation_method: Method used to serialise data (xml, json, binary).
-        :param obj: python object to be sent e.g. dictionary, list, class (binary only)
+        :param serialisation_method: Method used to serialise data (json or binary).
+        :param obj: python object to be sent e.g. dictionary, list, (classes need binary)
         :param encrypt: provide object encryption
         """
 

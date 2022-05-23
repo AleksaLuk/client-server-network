@@ -22,13 +22,13 @@ python setup.py install
 
 ## Running the application
 ### LOCAL
-Local erver is required to be running before client attempts to connect.
+Local server is required to be running before client attempts to connect.
 1. Run main-server.py (or custom server.py implementation)
 2. Run main-client.py (or custom client.py implementation)
 
 ### REMOTE (AWS)
 An EC2 instance has been set up with the server running as an always-on service. The user will not have to run their own server.
-1. Set host = "18.135.93.207"
+1. Set host = 18.135.93.207
 2. Set port = 80
 3. Run main-client.py (or custom client.py implementation)
 
@@ -92,6 +92,8 @@ from client_server_network.interface import UserInterface
 ui = UserInterface()
 ui.run(config="Config.cfg")
 ```
+Configuration file:
+![Screenshot](images/config.png)
 
 ### Through GUI (Tkinter)
 
