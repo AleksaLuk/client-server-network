@@ -1,26 +1,30 @@
+"""
+Demonstration of client connection.
+"""
+
+
 from client_server_network.client import Client
 from client_server_network.interface import UserInterface
 import socket
 
-# device's IP address
-SERVER_HOST = socket.gethostname()
-SERVER_PORT = 5432
-#
-c = Client(SERVER_HOST, SERVER_PORT)
-# c.connection()
-# d = dict(zip(range(10), range(10)))
-#
-# # class Hello:
-# #     pass
-# # d = Hello()
-#
-# c.transfer_object("json", d, encrypt=True)
-#
-# while True:
-#     c.transfer_object("json", d, encrypt=True)
-#     c.transfer_file("/Users/alex/PycharmProjects/client_server_network/client_server_network/sample_files/file1.txt",
-#                     encrypt=True)
-#     input()
+# AWS (User does not need to run own server instance)
+SERVER_HOST = "18.135.93.207"  # AWS public IP
+SERVER_PORT = 80  # AWS port
 
-ui = UserInterface(SERVER_HOST, SERVER_PORT)
-ui.run()
+# Localhost (User must run main-server.py first)
+# SERVER_HOST = socket.gethostname()
+# SERVER_PORT = 5433
+
+# Through code
+# c = Client(SERVER_HOST, SERVER_PORT)
+# c.connection()
+# data = dict(zip(range(10), range(10)))
+# c.transfer_object("json", data, encrypt=True)
+
+# Through GUI
+# ui = UserInterface(SERVER_HOST, SERVER_PORT)
+# ui.run()
+
+# Through Config
+ui = UserInterface()
+ui.run(config_file="config.cfg")

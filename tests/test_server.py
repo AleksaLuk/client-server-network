@@ -35,15 +35,15 @@ class TestServer(unittest.TestCase):
         mock_json.return_value = "de-jsoned message"
         mock_pickle.return_value = "de-pickled message"
         metadata = {}
-        metadata['encrypt'] = True
-        metadata['serialisation'] = "Json"
+        metadata["encrypt"] = True
+        metadata["serialisation"] = "Json"
 
         ret = self.server.receive_object("", metadata)
         mock_json.assert_called_with(mock_decrypt.return_value)
         self.assertEqual(mock_json.return_value, ret)
 
-        metadata['encrypt'] = False
-        metadata['serialisation'] = "Binary"
+        metadata["encrypt"] = False
+        metadata["serialisation"] = "Binary"
 
         ret = self.server.receive_object("", metadata)
         mock_pickle.assert_called_with("")
@@ -57,20 +57,22 @@ class TestServer(unittest.TestCase):
         """
 
         mock_decrypt.return_value = "decrypted message"
-        metadata = {'filename': 'name.txt'}
-        metadata['encrypt'] = True
+        metadata = {"filename": "name.txt"}
+        metadata["encrypt"] = True
         input_data = "path"
 
         self.server.receive_file(input_data, metadata)
         mock_decrypt.assert_called_with(input_data)
-        mock_open.assert_called_with(metadata['filename'], "wb")
-        mock_open.return_value.__enter__.return_value.write.assert_called_with(mock_decrypt.return_value)
-        metadata['encrypt'] = False
+        mock_open.assert_called_with(metadata["filename"], "wb")
+        mock_open.return_value.__enter__.return_value.write.assert_called_with(
+            mock_decrypt.return_value
+        )
+        metadata["encrypt"] = False
 
         self.server.receive_file(input_data, metadata)
-        mock_open.return_value.__enter__.return_value.write.assert_called_with(input_data)
-
+        mock_open.return_value.__enter__.return_value.write.assert_called_with(
+            input_data
+        )
 
     def test_receive_message(self):
         pass
-

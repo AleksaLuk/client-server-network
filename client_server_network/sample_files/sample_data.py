@@ -11,6 +11,6 @@ DATA = {
         "BMW": "Spain",
     },
     "number_dict": {"1": "1", "2": "2", "3": "3", "4": "4", "5": "5"},
-    "data_list": [1,2,3,4,4,5,6],
-    "grades": {'Betty': 'A', 'Emily': 'A+', 'John': 'B', 'Mike': 'C', 'Sam': 'A'}
+    "data_list": [1, 2, 3, 4, 4, 5, 6],
+    "grades": {"Betty": "C", "Emily": "A+", "John": "B", "Mike": "A", "Sam": "A"},
 }

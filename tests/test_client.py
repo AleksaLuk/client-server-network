@@ -25,7 +25,14 @@ class TestClient(unittest.TestCase):
     @mock.patch("client_server_network.client.create_headers")
     @mock.patch("client_server_network.client.encrypt_message")
     @mock.patch("client_server_network.client.serialise_object")
-    def test_transfer_object(self, serialise_object, encrypt_message, create_headers, sendall, receive_message):
+    def test_transfer_object(
+        self,
+        serialise_object,
+        encrypt_message,
+        create_headers,
+        sendall,
+        receive_message,
+    ):
         """
         Tests client object transfer logic
         """
@@ -41,8 +48,12 @@ class TestClient(unittest.TestCase):
         self.client.transfer_object(ser_method, input_obj, encrypt=encrypt)
         serialise_object.assert_called_with(input_obj, ser_method)
         encrypt_message.assert_called_with(serialise_object.return_value)
-        create_headers.assert_called_with(10, send_type, encrypt, ser_method, len(encrypt_message.return_value))
-        sendall.assert_called_with(bytes(create_headers.return_value, "utf-8") + encrypt_message.return_value)
+        create_headers.assert_called_with(
+            10, send_type, encrypt, ser_method, len(encrypt_message.return_value)
+        )
+        sendall.assert_called_with(
+            bytes(create_headers.return_value, "utf-8") + encrypt_message.return_value
+        )
         receive_message.assert_called_once()
 
         encrypt = False
@@ -50,8 +61,12 @@ class TestClient(unittest.TestCase):
         serialise_object.assert_called_with(input_obj, ser_method)
 
         encrypt_message.assert_called_once()
-        create_headers.assert_called_with(10, send_type, encrypt, ser_method, len(serialise_object.return_value))
-        sendall.assert_called_with(bytes(create_headers.return_value, "utf-8") + serialise_object.return_value)
+        create_headers.assert_called_with(
+            10, send_type, encrypt, ser_method, len(serialise_object.return_value)
+        )
+        sendall.assert_called_with(
+            bytes(create_headers.return_value, "utf-8") + serialise_object.return_value
+        )
         self.assertEqual(receive_message.call_count, 2)
 
     @mock.patch("client_server_network.client.Client.receive_message")
@@ -62,7 +77,17 @@ class TestClient(unittest.TestCase):
     @mock.patch("client_server_network.client.os.path.basename")
     @mock.patch("client_server_network.client.open")
     @mock.patch("client_server_network.client.bytes")
-    def test_transfer_file(self, mock_bytes, mock_open, basename, getsize, encrypt_message, create_headers, sendall, receive_message):
+    def test_transfer_file(
+        self,
+        mock_bytes,
+        mock_open,
+        basename,
+        getsize,
+        encrypt_message,
+        create_headers,
+        sendall,
+        receive_message,
+    ):
         """
         Tests client file transfer logic
         """
@@ -81,9 +106,13 @@ class TestClient(unittest.TestCase):
 
         mock_open.assert_called_with(basename.return_value, "rb")
 
-        create_headers.assert_called_with(10, send_type, encrypt, basename.return_value, getsize.return_value)
+        create_headers.assert_called_with(
+            10, send_type, encrypt, basename.return_value, getsize.return_value
+        )
         encrypt_message.assert_called_once_with(b"".join(file_reads))
-        sendall.assert_called_once_with(mock_bytes.return_value + encrypt_message.return_value)
+        sendall.assert_called_once_with(
+            mock_bytes.return_value + encrypt_message.return_value
+        )
         receive_message.assert_called_once()
 
         encrypt = False

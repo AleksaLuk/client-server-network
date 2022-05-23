@@ -21,14 +21,21 @@ python setup.py install
 ```
 
 ## Running the application
-Server is required to be running before client attempts to connect.
-1. Run main-server.py (or custom server implementation)
-2. Run main-client.py (or custom client implementation)
+### LOCAL
+Local erver is required to be running before client attempts to connect.
+1. Run main-server.py (or custom server.py implementation)
+2. Run main-client.py (or custom client.py implementation)
+
+### REMOTE (AWS)
+An EC2 instance has been set up with the server running as an always-on service. The user will not have to run their own server.
+1. Set host = "18.135.93.207"
+2. Set port = 80
+3. Run main-client.py (or custom client.py implementation)
 
 ## Stopping the application
-Clients is required to disconnect from server so the server can gracefully close client connection before the server is stopped.
+The client is required to disconnect from server so the server can gracefully close client connection before the server is stopped. The client will disconnect if the script comes to an end naturally. If a script keeps the connection in a loop, the client script must be stopped first.
 1. Stop main-client.py
-2. Stop main-server.py
+2. Stop main-server.py (local only)
 
 ## Examples
 

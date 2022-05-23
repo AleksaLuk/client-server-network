@@ -4,20 +4,17 @@ Client module
 
 import logging
 import socket
-
-import tqdm
 import os
+import tqdm
 from .utils import encrypt_message, serialise_object, create_headers
 
 logger = logging.getLogger(__name__)
 
-logging.basicConfig(format=f"CLIENT: %(asctime)s %(levelname)s - %(message)s",
-                    level=logging.INFO,
-                    handlers=[
-                            logging.FileHandler("client_history.log"),
-                            logging.StreamHandler()
-                        ]
-                    )
+logging.basicConfig(
+    format="CLIENT: %(asctime)s %(levelname)s - %(message)s",
+    level=logging.INFO,
+    handlers=[logging.FileHandler("client_history.log"), logging.StreamHandler()],
+)
 BUFFER_SIZE = 4096
 HEADERSIZE = 10
 
@@ -43,7 +40,7 @@ class Client(socket.socket):
         """
 
         self.connect((self.host, self.port))
-        logger.info(f"Connected to HOST: {self.host} & PORT: {self.port}")
+        logger.info("Connected to HOST: {} & PORT: {}".format(self.host, self.port))
 
     def receive_message(self):
         """
@@ -52,9 +49,9 @@ class Client(socket.socket):
 
         message_header = self.recv(HEADERSIZE)
         # print(message_header.decode())
-        message_length = int(message_header.decode('utf-8').strip())
+        message_length = int(message_header.decode("utf-8").strip())
         message = self.recv(message_length)
-        logger.info(f"Received message from server: {message}")
+        logger.info("Received message from server: {}".format(message))
 
     def transfer_object(self, serialisation_method: str, obj: any, encrypt=True):
         """
@@ -69,10 +66,12 @@ class Client(socket.socket):
         if encrypt:
             transformed_object = encrypt_message(transformed_object)
 
-        metadata = create_headers(HEADERSIZE, "object", encrypt, serialisation_method, len(transformed_object))
+        metadata = create_headers(
+            HEADERSIZE, "object", encrypt, serialisation_method, len(transformed_object)
+        )
         # send object:
         self.sendall(bytes(metadata, "utf-8") + transformed_object)
-        logger.info(f"Serialised object sent to server")
+        logger.info("Serialised object sent to server")
 
         self.receive_message()
 
@@ -92,13 +91,19 @@ class Client(socket.socket):
         file_contents = b""
 
         # start sending the file
-        logger.info(f"Transferring {filename} to server...")
+        logger.info("Transferring {} to server...".format(filename))
 
-        progress = tqdm.tqdm(range(filesize), f"CLIENT: Sending {filename}", unit="B", unit_scale=True, unit_divisor=1024)
-        with open(filepath, "rb") as f:
+        progress = tqdm.tqdm(
+            range(filesize),
+            f"CLIENT: Sending {filename}",
+            unit="B",
+            unit_scale=True,
+            unit_divisor=1024,
+        )
+        with open(filepath, "rb") as file:
             while True:
                 # read the bytes from the file
-                bytes_read = f.read(BUFFER_SIZE)
+                bytes_read = file.read(BUFFER_SIZE)
                 # print("A", bytes_read)
                 if not bytes_read:
                     # file transmitting is done
@@ -113,5 +118,5 @@ class Client(socket.socket):
             file_contents = encrypt_message(file_contents)
 
         self.sendall(bytes(metadata, "utf-8") + file_contents)
-        logger.info(f"{filename} transfer complete")
+        logger.info("{} transfer complete".format(filename))
         self.receive_message()

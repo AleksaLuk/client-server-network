@@ -3,14 +3,14 @@ Utility functions that support the operation of the core module.
 """
 
 import hashlib
-from Crypto.Cipher import AES
+import logging
 import pickle
 import json
-import logging
+from Crypto.Cipher import AES
 
 
-key = hashlib.sha256('This is a key123'.encode()).digest()
-iv = 'This is an IV456'
+KEY = hashlib.sha256("This is a key123".encode()).digest()
+IV = "This is an IV456"
 
 
 def encrypt_message(message: bytes):
@@ -20,12 +20,12 @@ def encrypt_message(message: bytes):
     :param message: input string to be encrypted
     :return: encrypted message
     """
-    obj = AES.new(key, AES.MODE_CFB, iv.encode())
+    obj = AES.new(KEY, AES.MODE_CFB, IV.encode())
     ciphertext = obj.encrypt(message)
     return ciphertext
 
 
-def decrypt_message(ciphertext: bytes):
+def decrypt_message(ciphertext: bytes) -> bytes:
     """
     Decryptes message
 
@@ -33,12 +33,12 @@ def decrypt_message(ciphertext: bytes):
     :return: decrypted message
     """
 
-    obj2 = AES.new(key, AES.MODE_CFB, iv.encode())
+    obj2 = AES.new(KEY, AES.MODE_CFB, IV.encode())
     message = obj2.decrypt(ciphertext)
     return message
 
 
-def serialise_object(obj: any, serialisation_method: str):
+def serialise_object(obj: any, serialisation_method: str) -> bytes:
     """
     Serialises python object
 
@@ -49,15 +49,15 @@ def serialise_object(obj: any, serialisation_method: str):
 
     if serialisation_method.lower() == "json":
         # Text serialisation
-        logging.info(f"Converting object to json format")
+        logging.info("Converting object to json format")
         data = str.encode(json.dumps(obj))
     elif serialisation_method.lower() == "binary":
         # Binary serialisation
-        logging.info(f"Converting object to binary format")
+        logging.info("Converting object to binary format")
         data = pickle.dumps(obj, -1)
     else:
         logging.error("Incorrect method. Please provide one of json or binary.")
-        return
+        data = None
     return data
 
 
@@ -88,13 +88,15 @@ def get_params(msg: bytes, headersize: int) -> dict:
     param3 = msg[2 * headersize: 3 * headersize]
     length = msg[3 * headersize: 4 * headersize]
 
-    metadata = {"type": data_type.strip().decode(),
-                "encrypt": bool(int(encrypt)),
-                "length": int(length)}
+    metadata = {
+        "type": data_type.strip().decode(),
+        "encrypt": bool(int(encrypt)),
+        "length": int(length),
+    }
 
-    if metadata["type"] == 'object':
+    if metadata["type"] == "object":
         metadata["serialisation"] = param3.strip().decode()
-    elif metadata["type"] == 'file':
+    elif metadata["type"] == "file":
         metadata["filename"] = param3.strip().decode()
 
     return metadata
